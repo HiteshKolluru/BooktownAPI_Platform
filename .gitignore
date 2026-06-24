@@ -1,0 +1,35 @@
+# Activity folders (managed under their own separate git repos)
+Activity1/
+Activity2/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Lab assignment PDF
+*.pdf
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Java / Gradle build artifacts
+.gradle/
+build/
+bin/
+out/
+*.class
+*.jar
+*.war
+
+# Misc
+*.log
+*.tmp
