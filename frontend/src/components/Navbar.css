@@ -1,0 +1,39 @@
+.navbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(246, 239, 226, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--card-edge);
+}
+.navbar-inner {
+  height: 70px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.brand { display: inline-flex; align-items: center; gap: 0.55rem; }
+.brand-mark { color: var(--amber); font-size: 1.3rem; }
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 800; font-size: 1.5rem;
+  color: var(--ink); letter-spacing: 0.2px;
+}
+.brand:hover .brand-name { color: var(--ink); }
+
+.nav-links { display: flex; gap: 0.35rem; }
+.nav-link {
+  position: relative;
+  font-size: 0.95rem; font-weight: 500;
+  color: var(--ink-soft);
+  padding: 0.45rem 0.8rem; border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.nav-link:hover { color: var(--ink); background: var(--paper-2); }
+.nav-link.active { color: var(--leather); }
+.nav-link.active::after {
+  content: ""; position: absolute; left: 0.8rem; right: 0.8rem; bottom: 0.15rem;
+  height: 2px; background: var(--amber); border-radius: 2px;
+}
+
+@media (max-width: 560px) {
+  .nav-link { padding: 0.4rem 0.55rem; font-size: 0.88rem; }
+  .brand-name { font-size: 1.3rem; }
+}
