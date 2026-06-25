@@ -113,17 +113,37 @@ type DeleteBookPayload {
     isbn: String
 }
 
+# Credentials for authentication
+input LoginInput {
+    username: String
+    password: String
+}
+
+# Returned after a successful login
+type AuthPayload {
+    # JWT bearer token — send as: Authorization: Bearer <token>
+    token: String
+    # The authenticated username
+    username: String
+    # Token lifetime in milliseconds
+    expiresInMs: Int
+}
+
 # The root Mutation type defines the entry points for mutating data.
+# NOTE: write mutations require an admin JWT; `login` is public.
 type Mutation {
-    # Add a new author to the system.
+    # Authenticate and receive a JWT (public).
+    login(input: LoginInput): AuthPayload
+
+    # Add a new author to the system. (admin)
     addAuthor(input: AddAuthorInput): AddAuthorPayload
 
-    # Add a new book to the system.
+    # Add a new book to the system. (admin)
     addBook(input: AddBookInput): AddBookPayload
 
-    # Update an author's last name by ID, returns old last name or null if not found
+    # Update an author's last name by ID, returns old last name or null if not found. (admin)
     updateAuthorLastName(input: UpdateAuthorLastNameInput): UpdateAuthorLastNamePayload
 
-    # Delete a book by ISBN, returns ISBN or null if not found
+    # Delete a book by ISBN, returns ISBN or null if not found. (admin)
     deleteBook(input: DeleteBookInput): DeleteBookPayload
 }

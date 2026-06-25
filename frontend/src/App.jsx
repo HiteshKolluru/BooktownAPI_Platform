@@ -2,6 +2,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import LoginModal from './components/LoginModal'
 import Dashboard from './pages/Dashboard'
 import Books from './pages/Books'
 import Authors from './pages/Authors'
@@ -40,6 +41,7 @@ export default function App() {
         </AnimatePresence>
       </main>
       <Footer />
+      <LoginModal />
     </>
   )
 }

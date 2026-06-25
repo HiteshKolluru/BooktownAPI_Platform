@@ -5,8 +5,10 @@ import { ADD_BOOK, DELETE_BOOK } from '../graphql/mutations'
 import BookCard from '../components/BookCard'
 import Modal from '../components/Modal'
 import { Loading, ErrorState, Empty } from '../components/States'
+import { useAuth } from '../auth/AuthContext'
 
 export default function Books() {
+  const { isAuthenticated, openLogin } = useAuth()
   const [term, setTerm] = useState('')
   const [adding, setAdding] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
@@ -65,10 +67,18 @@ export default function Books() {
     }
   }
 
+  // Gate write actions: prompt login if not authenticated.
+  const requireAuth = (action) => (isAuthenticated ? action() : openLogin())
+
   async function confirmDelete() {
     if (!pendingDelete) return
-    await deleteBook({ variables: { input: { isbn: pendingDelete.isbn } } })
-    setPendingDelete(null)
+    try {
+      await deleteBook({ variables: { input: { isbn: pendingDelete.isbn } } })
+      setPendingDelete(null)
+    } catch (err) {
+      setPendingDelete(null)
+      if (/admin|logged in|unauthor/i.test(err.message)) openLogin()
+    }
   }
 
   return (
@@ -77,7 +87,7 @@ export default function Books() {
         <div className="eyebrow">The Catalog</div>
         <div className="row-between">
           <h1 className="mb-0">Books</h1>
-          <button className="btn btn-primary" onClick={() => setAdding(true)}>+ Add a book</button>
+          <button className="btn btn-primary" onClick={() => requireAuth(() => setAdding(true))}>+ Add a book</button>
         </div>
         <div className="ornament" />
 
@@ -113,7 +123,7 @@ export default function Books() {
                 key={b.isbn}
                 book={b}
                 authorName={authorName(b.authorId)}
-                onDelete={setPendingDelete}
+                onDelete={(book) => requireAuth(() => setPendingDelete(book))}
                 index={i}
               />
             ))}

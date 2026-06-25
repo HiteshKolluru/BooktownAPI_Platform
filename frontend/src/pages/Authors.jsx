@@ -9,8 +9,11 @@ import { ADD_AUTHOR, UPDATE_AUTHOR_LASTNAME } from '../graphql/mutations'
 import AuthorCard from '../components/AuthorCard'
 import Modal from '../components/Modal'
 import { Loading, ErrorState, Empty } from '../components/States'
+import { useAuth } from '../auth/AuthContext'
 
 export default function Authors() {
+  const { isAuthenticated, openLogin } = useAuth()
+  const requireAuth = (action) => (isAuthenticated ? action() : openLogin())
   const [lastNameFilter, setLastNameFilter] = useState('')
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -78,7 +81,7 @@ export default function Authors() {
         <div className="eyebrow">The Writers</div>
         <div className="row-between">
           <h1 className="mb-0">Authors</h1>
-          <button className="btn btn-primary" onClick={() => setAdding(true)}>+ Add an author</button>
+          <button className="btn btn-primary" onClick={() => requireAuth(() => setAdding(true))}>+ Add an author</button>
         </div>
         <div className="ornament" />
 
@@ -135,7 +138,7 @@ export default function Authors() {
         {!error && !loading && authors.length > 0 && (
           <div className="grid grid-authors">
             {authors.map((a, i) => (
-              <AuthorCard key={a.id} author={a} onEditLastName={openEdit} index={i} />
+              <AuthorCard key={a.id} author={a} onEditLastName={(author) => requireAuth(() => openEdit(author))} index={i} />
             ))}
           </div>
         )}
