@@ -20,14 +20,16 @@ graph LR
 
 ---
 
-## Current status (Phase 1, in progress)
+## Status — ✅ all 5 phases complete
 
-- ✅ **Frontend scaffolded** — Vite + React + Apollo Client in `frontend/`, with a
-  vintage bookstore design system. Pages: Dashboard, Books, Authors, API Explorer, About.
-- ✅ **Backend unified** — the two lab projects were consolidated into a single tracked
-  `backend/` (Spring Boot GraphQL + JPA/H2), built from Activity 2, which is a functional
-  superset of Activity 1. `Activity1/`/`Activity2/` are deprecated and slated for removal.
-- ✅ **End-to-end verified** — `frontend` (`:5173`) proxies `/graphql` to `backend` (`:8080`).
+Live at **https://d2jp9hcegs2w8v.cloudfront.net**. The sections below are the original
+plan, kept for reference.
+
+- ✅ **Phase 1 — Frontend:** Vite + React + Apollo storefront (Dashboard, Books, Authors, API Explorer, About).
+- ✅ **Phase 2 — AWS:** EC2 + RDS PostgreSQL + S3 + CloudFront, Elastic IP, hardened security groups.
+- ✅ **Phase 3 — Security:** Spring Security + JWT, role-based writes, rate + depth limiting, no prod introspection.
+- ✅ **Phase 4 — Cybersecurity:** OWASP ZAP scan, CloudFront security headers, CloudWatch alarms (see [SECURITY.md](SECURITY.md)).
+- ✅ **Phase 5 — CI/CD:** GitHub Actions (JUnit + JaCoCo) with OIDC-based frontend auto-deploy.
 
 ## Phase 1 — Frontend
 

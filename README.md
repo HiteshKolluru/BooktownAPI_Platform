@@ -1,129 +1,128 @@
-# Booktown GraphQL API Platform
+# 📚 Booktown API Platform
 
-A Spring Boot GraphQL API for managing a bookstore's books and authors. Built as part of **SER421 — Lab: GraphQL APIs** at Arizona State University.
+[![CI/CD](https://github.com/HiteshKolluru/BooktownAPI_Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/HiteshKolluru/BooktownAPI_Platform/actions/workflows/ci.yml)
+&nbsp;**Live demo → https://d2jp9hcegs2w8v.cloudfront.net**
 
-## Overview
+A full-stack, cloud-deployed, security-hardened **GraphQL bookstore** — a React storefront
+over a Spring Boot GraphQL API, running on AWS with JWT auth, edge security, monitoring,
+and a CI/CD pipeline.
 
-This project implements a full GraphQL API over the classic Booktown database with two separate implementations:
+It began as an ASU SER421 GraphQL lab and was grown across five phases into a portfolio
+piece demonstrating **SDE + cloud + cybersecurity** skills end-to-end.
 
-| | Activity 1 | Activity 2 |
-|---|---|---|
-| **Backend** | In-memory static data (no database) | Spring Data JPA + H2 embedded database |
-| **Spring Boot** | 3.0.1 | 3.0.1 |
-| **Java** | 17 | 17 |
-| **Data** | `ArrayList` with hardcoded seed data | JPA entities loaded via `CommandLineRunner` |
+---
 
-## GraphQL API Endpoints
+## Architecture
 
-### Queries
-
-| Query | Description |
-|---|---|
-| `authors` | Get all authors |
-| `authorById(id)` | Get an author by ID |
-| `books` | Get all books |
-| `bookByISBN(isbn)` | Get a book by ISBN |
-| `booksByAuthorId(authorId)` | Get books by a specific author |
-| `booksByTitleSubstring(substring)` | Search books by title substring (case-insensitive) |
-| `authorsByLastName(lastName)` | Find authors by last name |
-| `bookTitlesByAuthorFirstName(firstName)` | Get book titles written by authors with a given first name |
-
-### Mutations
-
-| Mutation | Description |
-|---|---|
-| `addAuthor(input)` | Add a new author |
-| `addBook(input)` | Add a new book |
-| `updateAuthorLastName(input)` | Update an author's last name by ID — returns old last name if successful, null otherwise |
-| `deleteBook(input)` | Delete a book by ISBN — returns ISBN if successful, null otherwise |
-
-## Getting Started
-
-### Prerequisites
-
-- **JDK 17+** installed
-- **Gradle** (wrapper included, no install needed)
-
-### Running Activity 1 (In-Memory)
-
-```bash
-cd Activity1/BooktownGraphQl
-./gradlew bootRun
+```mermaid
+flowchart LR
+    U["Browser"] -->|HTTPS| CF["CloudFront<br/>(TLS, security headers)"]
+    CF -->|" / "| S3["S3 (private, OAC)<br/>React app"]
+    CF -->|" /graphql, /graphiql "| EC2["EC2 t3.micro<br/>Spring Boot + JWT"]
+    EC2 --> RDS["RDS PostgreSQL<br/>(private)"]
+    GH["GitHub Actions"] -->|"OIDC, on push to main"| S3
+    GH -->|invalidate| CF
 ```
 
-### Running Activity 2 (JPA + H2)
+One CloudFront domain serves **both** the app and the API, so everything is HTTPS and
+**same-origin** (no CORS). The API port and database are reachable only from CloudFront and
+the app respectively; SSH is locked to the admin IP.
 
-```bash
-cd Activity2/BooktownGraphQl
-./gradlew bootRun
-```
+---
 
-Both activities start on **http://localhost:8080**.
+## Tech stack
 
-### Endpoints
-
-| URL | Description |
+| Layer | Tech |
 |---|---|
-| `POST /graphql` | GraphQL API endpoint |
-| `/graphiql` | Interactive GraphQL IDE for testing queries |
-| `/h2-console` | H2 database console (Activity 2 only) |
+| **Frontend** | React, Vite, Apollo Client, Framer Motion, vanilla-CSS design system |
+| **Backend** | Java 17, Spring Boot 3, Spring for GraphQL, Spring Security (JWT), Spring Data JPA |
+| **Database** | PostgreSQL (AWS RDS) in prod · H2 in local dev |
+| **Cloud** | EC2, RDS, S3, CloudFront, IAM, CloudWatch, SNS (us-east-1) |
+| **CI/CD** | GitHub Actions, JaCoCo, GitHub OIDC → IAM |
+| **Security tooling** | OWASP ZAP, AWS managed prefix lists, CloudFront response-headers policy |
 
-## Example Queries
+---
+
+## What's inside (the 5 phases)
+
+1. **Frontend** — React storefront with a vintage-bookstore aesthetic: Dashboard, Books
+   (search + add/delete), Authors (filter, add, edit, titles-by-first-name), a live API
+   Explorer, and an About/architecture page.
+2. **AWS cloud** — EC2 (Spring Boot via systemd) + RDS PostgreSQL + S3/CloudFront for the
+   SPA, Elastic IP for stability, least-privilege security groups.
+3. **Security** — Spring Security + JWT (admin login), role-based access (reads public,
+   writes admin-only), GraphQL query-depth limiting, per-IP rate limiting, introspection
+   disabled in prod.
+4. **Cybersecurity** — OWASP ZAP scan, CloudFront security headers (CSP, HSTS, etc.),
+   CloudWatch alarms + SNS alerting. See [SECURITY.md](SECURITY.md).
+5. **CI/CD** — GitHub Actions builds + tests (JUnit 5 + JaCoCo) on every push/PR, and
+   auto-deploys the frontend to S3 + CloudFront on `main` via GitHub OIDC (no stored keys).
+
+---
+
+## GraphQL API
+
+Schema: [`backend/src/main/resources/graphql/schema.graphqls`](backend/src/main/resources/graphql/schema.graphqls)
+
+**Queries (public):** `authors`, `authorById(id)`, `books`, `bookByISBN(isbn)`,
+`booksByAuthorId(authorId)`, `booksByTitleSubstring(substring)`, `authorsByLastName(lastName)`,
+`bookTitlesByAuthorFirstName(firstName)`
+
+**Mutations:** `login(input)` *(public — returns a JWT)*; and admin-only
+`addAuthor`, `addBook`, `updateAuthorLastName`, `deleteBook`.
 
 ```graphql
-# Get all books with their authors
-query {
-  books {
-    isbn
-    title
-    authorId
-  }
-}
+# 1) get a token
+mutation { login(input: { username: "admin", password: "••••" }) { token } }
 
-# Search books by title
-query {
-  booksByTitleSubstring(substring: "Great") {
-    isbn
-    title
-    authorId
-  }
-}
-
-# Update an author's last name
-mutation {
-  updateAuthorLastName(input: {
-    id: 0
-    newLastName: "NewLastName"
-  }) {
-    oldLastName
-    author {
-      id
-      firstName
-      lastName
-    }
-  }
-}
+# 2) call a protected mutation with header: Authorization: Bearer <token>
+mutation { addBook(input: { isbn: "123", title: "Dune", authorId: 1 }) { book { isbn title } } }
 ```
 
-## Testing
+---
 
-Postman collections with positive and negative test cases are included in each activity folder. Test coverage includes:
+## Run it locally
 
-- Valid queries returning expected data
-- Queries with non-existent IDs (returns empty lists or null)
-- Negative IDs and invalid inputs (returns validation errors)
-- Invalid GraphQL syntax
-- Empty/missing parameters
+**Prerequisites:** JDK 17+, Node 18+. (Backend ships the Gradle wrapper.)
 
-## Project Structure
+```bash
+# Terminal 1 — API (in-memory H2, default admin/admin)
+cd backend && ./gradlew bootRun          # http://localhost:8080
+
+# Terminal 2 — frontend
+cd frontend && npm install && npm run dev # http://localhost:5173
+```
+
+The Vite dev server proxies `/graphql`, `/graphiql`, `/h2-console` to the backend, so the
+app calls a same-origin `/graphql`. Useful endpoints: `/graphiql` (IDE), `/h2-console`
+(JDBC `jdbc:h2:mem:booktowndb`, user `sa`, no password).
+
+Run the tests + coverage:
+
+```bash
+cd backend && ./gradlew test jacocoTestReport   # report: build/reports/jacoco/test/html
+```
+
+---
+
+## Repository layout
 
 ```
 BooktownAPI_Platform/
-├── README.md
-├── Activity1/           # In-memory GraphQL API (own git repo)
-│   └── BooktownGraphQl/
-└── Activity2/           # JPA + H2 GraphQL API (own git repo)
-    └── BooktownGraphQl/
+├── .github/workflows/ci.yml   # CI/CD pipeline (test + coverage, frontend auto-deploy)
+├── backend/                   # Spring Boot GraphQL API (JPA, JWT security)
+├── frontend/                  # Vite + React + Apollo storefront
+├── SECURITY.md                # Phase 4 security findings & remediation
+├── IMPLEMENTATION_PLAN.md     # 5-phase roadmap & vision
+├── CLAUDE.md                  # contributor/agent guidance
+└── README.md
 ```
 
-> **Note:** Activity1 and Activity2 each have their own `.git` repos and are excluded from this root repository's tracking.
+---
+
+## Notes
+
+- Local dev uses in-memory H2 (data resets on restart, re-seeded automatically); production
+  uses persistent RDS PostgreSQL via the `prod` Spring profile (env-var driven).
+- All secrets (DB / admin passwords, JWT signing key) live in host environment variables or
+  are obtained via GitHub OIDC — none are committed to the repo.

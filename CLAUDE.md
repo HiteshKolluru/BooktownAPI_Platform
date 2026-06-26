@@ -7,8 +7,8 @@ Guidance for Claude Code (and humans) working in this repository.
 The **Booktown API Platform** is a portfolio project that grows a Spring Boot GraphQL
 API (originally SER421 Lab — "GraphQL APIs" at ASU) into a full-stack, cloud-deployed,
 security-hardened application. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for
-the 5-phase roadmap (Frontend → AWS → Security → Cybersecurity → CI/CD). **Phase 1
-(Frontend) is the current focus.**
+the 5-phase roadmap (Frontend → AWS → Security → Cybersecurity → CI/CD). **All five
+phases are complete**; the app is live on AWS with CI/CD.
 
 ## Repository layout
 
@@ -16,26 +16,24 @@ the 5-phase roadmap (Frontend → AWS → Security → Cybersecurity → CI/CD).
 BooktownAPI_Platform/
 ├── README.md                 # Public-facing project overview
 ├── IMPLEMENTATION_PLAN.md    # 5-phase roadmap & vision
+├── SECURITY.md               # Phase 4 security findings & remediation
 ├── CLAUDE.md                 # This file
 ├── .gitignore
-├── backend/                  # Unified Spring Boot GraphQL API (JPA + H2) — TRACKED
-├── frontend/                 # Phase 1 React app (Vite + Apollo) — TRACKED
-├── Activity1/                # DEPRECATED lab v1 — to be removed (git-ignored)
-└── Activity2/                # DEPRECATED lab v2 — to be removed (git-ignored)
+├── .github/workflows/ci.yml  # CI/CD pipeline
+├── backend/                  # Spring Boot GraphQL API (JPA, JWT security) — TRACKED
+└── frontend/                 # React app (Vite + Apollo) — TRACKED
 ```
 
-> [!IMPORTANT]
-> `backend/` and `frontend/` are the live, tracked projects. `Activity1/` and
-> `Activity2/` are the original ASU lab projects — superseded by `backend/` and slated
-> for removal. They remain **git-ignored** (each has its own nested `.git`). The `*.pdf`
-> lab handout is also ignored.
+> [!NOTE]
+> Local-only (git-ignored) files: `DEPLOY_AWS.md` and `HOW_TO_RUN.md` (ops runbooks) and
+> `booktown-key.pem` (EC2 SSH key). The original `Activity1/`/`Activity2/` ASU lab projects
+> have been removed — `backend/` superseded them.
 
 ## Backend (`backend/`)
 
-The single, consolidated backend. It was built from **Activity 2** (Spring Data JPA + H2),
-which is a functional **superset** of Activity 1 — same GraphQL schema and the same
-queries/mutations, just backed by a real (in-memory) database instead of a hardcoded
-`ArrayList`. Nothing functional from Activity 1 was lost.
+The consolidated backend, originally built from the ASU lab's JPA + H2 activity and since
+extended with Spring Security (JWT), rate limiting, and a Postgres `prod` profile for AWS.
+Local dev uses in-memory H2; production uses RDS PostgreSQL.
 
 | | |
 |---|---|
@@ -112,8 +110,10 @@ npm run dev      # http://localhost:5173
 - Both `backend/` and `frontend/` ship Gradle/npm projects. The Gradle wrapper jar
   (`backend/gradle/wrapper/gradle-wrapper.jar`) **must stay committed** — the root
   `.gitignore` ignores `*.jar`, but `backend/.gitignore` re-includes the wrapper.
-- Stray `#AuthorRepository.java#` files are Emacs autosave artifacts — not source.
-- H2 uses `ddl-auto=create-drop`, so data resets on every restart (seeded by
-  `DataInitializer`). In Phase 2, H2 → RDS PostgreSQL.
-- Once `Activity1/`/`Activity2/` are removed, drop their lines from `.gitignore`.
-- Keep this file and IMPLEMENTATION_PLAN.md updated as phases complete.
+- Local H2 uses `ddl-auto=create-drop` (data resets each restart, re-seeded idempotently by
+  `DataInitializer`); the `prod` profile uses RDS PostgreSQL with `ddl-auto=update`.
+- Security: writes require a JWT with `ROLE_ADMIN` (`@PreAuthorize`); reads are public.
+  Admin/JWT/DB secrets come from env vars, never the repo. Introspection is off in prod.
+- CI/CD: pushes/PRs run tests + JaCoCo; pushes to `main` auto-deploy the frontend to
+  S3 + CloudFront via GitHub OIDC. Backend redeploy is the documented `scp` in `DEPLOY_AWS.md`.
+- Keep this file, README.md, and IMPLEMENTATION_PLAN.md in sync as things change.

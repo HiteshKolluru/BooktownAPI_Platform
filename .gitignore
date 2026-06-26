@@ -1,8 +1,3 @@
-# Old lab activities — superseded by backend/. Kept ignored until removed,
-# because each still contains its own nested .git repo.
-Activity1/
-Activity2/
-
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -11,9 +6,6 @@ Activity2/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Lab assignment PDF
-*.pdf
 
 # IDE files
 .idea/
