@@ -1,0 +1,82 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write   # required for AWS OIDC
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Always: build + test the backend with JaCoCo coverage
+  # ---------------------------------------------------------------------------
+  backend-test:
+    name: Backend build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build, test & coverage
+        working-directory: backend
+        run: ./gradlew clean build jacocoTestReport
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage
+          path: backend/build/reports/jacoco/test/html
+
+      - name: Test results to summary
+        if: always()
+        run: |
+          echo "### Backend ✅ built & tested" >> "$GITHUB_STEP_SUMMARY"
+          echo "JaCoCo coverage report is attached as the **jacoco-coverage** artifact." >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # main only: build the frontend and deploy to S3 + invalidate CloudFront
+  # Auth via GitHub OIDC -> AWS IAM role (no long-lived keys).
+  # ---------------------------------------------------------------------------
+  frontend-deploy:
+    name: Deploy frontend (S3 + CloudFront)
+    needs: backend-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Sync to S3 and invalidate CloudFront
+        run: |
+          aws s3 sync frontend/dist "s3://${{ vars.S3_BUCKET }}" --delete
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DIST_ID }}" \
+            --paths "/*"
+          echo "### Frontend deployed 🚀" >> "$GITHUB_STEP_SUMMARY"
